@@ -1,0 +1,595 @@
+<?php
+function clean($str) {	 $str = @trim($str); if(get_magic_quotes_gpc()) {	 
+$str = stripslashes($str);	 }	 return mysql_real_escape_string($str);	 }
+
+function cyd_printCustom($customFieldName,$customfieldID = ''){
+	if($customfieldID == ''){$customfieldID = $post->ID;}
+	
+	$printCustom_arr = get_post_custom_values($customFieldName, $customfieldID); 
+	$printCustom = $printCustom_arr[0];
+	if ($printCustom == '') {
+		$printCustom = '&nbsp;';
+	}
+	echo $printCustom;
+}//cyd_printCustom end
+
+
+function cyd_getCustom($customFieldName,$customfieldID = ''){
+	if($customfieldID == ''){$customfieldID = $post->ID;}
+	
+	$printCustom_arr = get_post_custom_values($customFieldName, $customfieldID); 
+	$printCustom = $printCustom_arr[0];
+	if ($printCustom == '') {
+		$printCustom = '&nbsp;';
+	}
+	return $printCustom;
+}//cyd_printCustom end
+
+
+function cyd_PostByID($winzpageID = ''){
+	if($winzpageID  == ''){$winzpageID  = $post->ID; }
+	$id=$winzpageID; $post = get_page($id); $content = changeToBreak(apply_filters('the_content', $post->post_content)); 
+echo '<span class="fee-group">'.$content; 
+edit_post_link("
+	<style>.fee-group:hover{ border:#999 dashed 1px; margin:-1px; position:relative; top:0px;}</style>
+	<div class='fee-edit-button'><img src='".get_bloginfo('template_url') ."/gear-select.png'></div>", "","",$winzpageID);/*add edit logo if admin/editor is online*/;
+	echo '</span>';
+echo "<br /><br />";
+}
+
+function cyd_PostByName($winzpageName){
+	$post = get_page_by_title($winzpageName); 
+	$winzpageID = $post->ID;
+	$id=$winzpageID; $post = get_page($id); $content = changeToBreak(apply_filters('the_content', $post->post_content)); 
+echo '<span class="fee-group">'.$content; 
+edit_post_link("
+	<style>.fee-group:hover{ border:#999 dashed 1px; margin:-1px; position:relative; top:0px;}</style>
+	<div class='fee-edit-button'><img src='".get_bloginfo('template_url') ."/gear-select.png'></div>", "","",$winzpageID);/*add edit logo if admin/editor is online*/;
+	echo '</span>';
+echo "<br /><br />";
+}
+
+function get_cyd_PostByID($winzpageID){
+	$id=$winzpageID; $post = get_page($id); $content = changeToBreak(apply_filters('the_content', $post->post_content)); 
+return '<span class="fee-group">'.$content; 
+return '</span>';
+return "<br /><br />";
+}
+
+function get_imgpath(){
+	$imgpath = get_bloginfo('template_url')."/img/";
+	return $imgpath;
+}
+
+//convert &nbsp to <br />
+function changeToBreak($content){
+	return str_replace('&nbsp;','<br />',$content);
+}
+
+function cyd_img_id($imageID){
+	$url = wp_get_attachment_image_src($imageID, $imgSize);
+	$banner_url = $url[0];
+	$attachment = get_post( $imageID );
+	$alt = strip_tags(get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true ));
+	$caption = strip_tags($attachment->post_excerpt);
+	$description = strip_tags($attachment->post_content);
+	$title = strip_tags($attachment->post_title);
+	
+	return '<img class="'.$title.'" id="'.$caption.'"  title="'.$description.'" alt="'.$alt.'" src="'.$banner_url.'"  />';
+}
+
+function uploadImage($inputName){
+	if ( ! function_exists( 'wp_handle_upload' ) ) require_once( ABSPATH . 'wp-admin/includes/file.php' );
+	$uploadedfile = $_FILES[$inputName];
+	$upload_overrides = array( 'test_form' => false );
+	$movefile = wp_handle_upload( $uploadedfile, $upload_overrides );
+	if ( $movefile ) {
+		return  $movefile['url'];
+	} else {
+		return "failed";
+	}
+	//http://codex.wordpress.org/Function_Reference/wp_handle_upload
+}
+
+class cyd_get_child_page{
+	function __construct(){
+		$this->page_id = get_the_ID();
+	}
+	
+	function page_id_int($pageid){
+		$this->page_id = $pageid;
+	}
+	
+	function page_title_var($title){
+		$page = get_page_by_title( $title );
+		$this->page_id = $page->ID;
+	}
+	
+	function get_id(){
+		return $this->page_id;
+	}
+	
+	function get_title(){
+		$post = get_post($this->page_id);
+		return $post->post_title; 
+	}
+	
+	function get_excerpt(){
+		$post = get_post($this->page_id);
+		return $post->post_excerpt; 
+	}
+	
+	function get_content(){
+		$post = get_post($this->page_id);
+		return changeToBreak(apply_filters('the_content', $post->post_content));
+	}
+	
+	
+	function get_featured_image($imgSize = 'FULL')
+	{	
+		$url = wp_get_attachment_image_src(get_post_thumbnail_id($this->page_id), $imgSize);
+		$banner_url = $url[0];
+		
+		if ($banner_url != "") {
+			$thumb = '<img src="'.$banner_url.'" border="0" alt="'.get_the_title().'"  />';// for the size of featured image
+		} else {
+			$thumb = '';
+		}
+		return $thumb;
+	}
+	
+	function image_url($imgSize = 'FULL'){
+		$postid = $this->page_id;
+		$url = wp_get_attachment_image_src(get_post_thumbnail_id($postid), $imgSize);
+		$banner_url = $url[0];
+		
+		return $banner_url;
+	}
+	
+	function get_edit(){
+		edit_post_link("*EDIT_".$this->get_title()."*","","",$this->page_id);
+	}
+}
+
+   
+
+class cyd_addpost{
+
+	function __construct(){
+		$postcount = 0;
+		$this->postcount = 10;
+		$this->categories = '';
+		$this->order = 'date&order';
+		$this->postloopcount = 0;
+	}
+	
+	function postcount_int($post_count = 5){
+		$this->postcount = $post_count;
+	}
+	function categories_var($categories = ''){
+		$this->categories = $categories;
+	}
+	function order_var($order = 'date&order'){
+		$this->order = $order;
+	}
+	
+	function run_addpost(){
+		wp_reset_postdata();
+		$totalpost = $this->postcount;
+		$this->paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+		$this->the_query = new WP_Query('cat='.$this->categories.'&showposts='.$totalpost.'&orderby='.$this->order.'=DESC&paged='.$this->paged);
+		
+		$dctr = 1;
+		$closetag = 0;
+		$cydpageID = get_the_ID();
+		$this->pageID =  get_the_ID();
+		
+		$this->arraycounter = 0;
+			
+		while( $this->the_query->have_posts() ) : 
+			$this->the_query->the_post();
+			$this->arraycounter++;
+			$this->cydpostcontent['date'][$this->arraycounter] = get_the_date();
+			$this->cydpostcontent['permalink'][$this->arraycounter] = get_permalink();
+			$this->cydpostcontent['title'][$this->arraycounter] = get_the_title();
+			$this->cydpostcontent['content'][$this->arraycounter] = get_the_content();
+			$this->cydpostcontent['excerpt'][$this->arraycounter] = get_the_excerpt();
+			$this->cydpostcontent['postid'][$this->arraycounter] =  get_the_id();
+				
+		endwhile;
+		$this->maxnumpages = $this->the_query->max_num_pages;
+	}
+	
+	function postloop(){
+		$this->postloopcount++;
+		$this->thepostcount =$this->postloopcount;
+		return $this->postloopcount <= $this->arraycounter;
+	}
+	
+	function postloop2(){
+	}
+	
+	function get_id(){
+		return $this->cydpostcontent['postid'][$this->thepostcount];
+	}
+	
+	function get_title(){
+		return $this->cydpostcontent['title'][$this->thepostcount];
+	}
+	
+	
+	function image_url($imgSize = 'FULL'){
+		$postcount = $this->thepostcount;
+		$postid = $this->cydpostcontent['postid'][$postcount];
+		$url = wp_get_attachment_image_src(get_post_thumbnail_id($postid), $imgSize);
+		$banner_url = $url[0];
+		
+		return $banner_url;
+	}
+	
+	function get_thumbnail($imgSize = 'FULL'){
+		$postcount = $this->thepostcount;
+		$postid = $this->cydpostcontent['postid'][$postcount];
+		$imageID = get_post_thumbnail_id($postid);
+		$url = wp_get_attachment_image_src($imageID, $imgSize);
+		$banner_url = $url[0];
+		$attachment = get_post( $imageID );
+		$alt = strip_tags(get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true ));
+		$caption = strip_tags($attachment->post_excerpt);
+		$description = strip_tags($attachment->post_content);
+		$title = strip_tags($attachment->post_title);
+		
+		if ($banner_url != "") {
+			$thumb ='<img class="'.$title.'" id="'.$caption.'"  title="'.$description.'" alt="'.$alt.'" src="'.$banner_url.'"  />';// for the size of featured image
+		} else {
+			$thumb = '';
+		}
+		return $thumb;
+	}
+	
+	function get_permalink(){
+		return $this->cydpostcontent['permalink'][$this->thepostcount];
+	}
+	
+	function get_content(){
+		return $this->cydpostcontent['content'][$this->thepostcount];
+	}
+	
+	function get_excerpt(){
+		return $this->cydpostcontent['excerpt'][$this->thepostcount];
+	}
+	
+	function get_edit(){
+		return 
+		edit_post_link("*EDIT_".$this->get_title($this->thepostcount)."*","","",$this->cydpostcontent['postid'][$this->thepostcount]);
+	}
+	
+	function get_pager($separator = ''){
+		$cydpageID = $this->pageID;
+		$paged = $this->paged;		
+		$pseparator = '';
+			if($this->maxnumpages>1){
+				for($i=1;$i<=$this->maxnumpages;$i++){
+					if($paged==$i) {
+						$pagerlink .= $pseparator.'<a class="chosenpage">'.$i.'</a>';
+					} else {
+						$pagerlink .= $pseparator.'<a class="pages" href="'.get_permalink($cydpageID).'page/'.$i.'" >'.$i.'</a> ';
+					}
+					$pseparator = $separator;
+				}
+				return $pagerlink;
+			}else{
+				return ' 1';
+			}
+	}
+	
+	function get_pager_next($button = 'Next'){
+		$cydpageID = $this->pageID;
+		$paged = $this->paged;
+		$i = $this->maxnumpages;
+		if($paged < $i){
+			$pagednext = $paged+1;
+			return '<a class="pages"  href="'.get_permalink($cydpageID).'page/'.$pagednext.'">'.$button.'</a>';
+		}
+	}
+	
+	function get_pager_prev($button = 'Previous'){
+		$cydpageID = $this->pageID;
+		$paged = $this->paged;
+		$i = $this->maxnumpages;
+		if($paged != 1){
+			$prevpaged = $paged - 1;
+			return '<a class="pages" href="'.get_permalink($cydpageID).'page/'.$prevpaged.'">'.$button.'</a>';
+		}
+	}
+}
+
+
+class cyd_get_all_child{
+	
+	function __contruct(){
+		$this->postcount = 9999;	
+	}
+	
+	function set_parent_ID($parentID){
+		$this->parentID = $parentID;
+	}
+	
+	function childcount_int($post_count = ''){
+		if($post_count == ''){
+			$post_count = 9999;
+		}
+		$this->postcount = $post_count;
+	}
+	
+	function order_var($order = 'post_date'){
+		$this->order = $order;
+	}
+	
+	function run_all_child(){
+		$this->arraycounter = 0;
+		$args = array(
+			'sort_order' => 'asc',
+			'sort_column' => $this->order,
+			'parent' => $this->parentID
+		); //$this->postcount
+		$childs = get_pages($args);
+		
+			$this->maxnumpages =  ceil ( count($childs) / $this->postcount);
+			$this->currentpage = (get_query_var('paged')) ? get_query_var('paged') : 1;
+			$this->pagestart =($this->currentpage * $this->postcount)-$this->postcount;
+			$this->pageend = $this->currentpage*$this->postcount;
+		foreach($childs as $child) {
+			$this->pagecounter++;
+			if($this->pagecounter > $this->pagestart && $this->pagecounter <= $this->pageend){
+				$this->arraycounter++;
+				$this->idArray[$this->arraycounter] =  $child->ID;
+				$this->cydpostcontent['content'][$child->ID] = get_the_content();
+			}
+		}
+	}
+	
+	function pageloop(){
+		$this->pagecount++;
+		$this->thepostcount = $this->pagecount;
+		return  $this->pagecount <= $this->arraycounter;
+	}
+	
+	function get_pageid(){
+		return $this->idArray[$this->thepostcount];
+	}
+	
+	function image_url($imgSize = 'FULL'){
+		$postcount = $this->thepostcount;
+		$postid = $this->idArray[$this->thepostcount];
+		$url = wp_get_attachment_image_src(get_post_thumbnail_id($postid), $imgSize);
+		$banner_url = $url[0];
+		
+		return $banner_url;
+	}
+	
+	function get_pager($separator = ''){
+		$cydpageID = $this->parentID ;
+		$paged =$this->currentpage;		
+		$pseparator = '';
+			if($this->maxnumpages>1){
+				for($i=1;$i<=$this->maxnumpages;$i++){
+					if($paged==$i) {
+						$pagerlink .= $pseparator.'<a class="chosenpage">'.$i.'</a>';
+					} else {
+						$pagerlink .= $pseparator.'<a class="pages" href="'.get_permalink($cydpageID).'page/'.$i.'" >'.$i.'</a> ';
+					}
+					$pseparator = $separator;
+				}
+				return $pagerlink;
+			}else{
+				return ' 1';
+			}
+	}
+	
+	function get_pager_next($button = 'Next'){
+		$cydpageID = $this->parentID ;
+		$paged = $this->currentpage;
+		$i = $this->maxnumpages;
+		if($paged < $i){
+			$pagednext = $paged+1;
+			return '<a class="pages"  href="'.get_permalink($cydpageID).'page/'.$pagednext.'">'.$button.'</a>';
+		}
+	}
+	
+	function get_pager_prev($button = 'Previous'){
+		$cydpageID = $this->parentID ;
+		$paged = $this->currentpage;
+		$i = $this->maxnumpages;
+		if($paged != 1){
+			$prevpaged = $paged - 1;
+			return '<a class="pages" href="'.get_permalink($cydpageID).'page/'.$prevpaged.'">'.$button.'</a>';
+		}
+	}
+	
+}
+//http://codex.wordpress.org/Function_Reference/get_pages
+
+class cyd_media_master{
+	
+	function __construct($pageid = ''){
+		global $post;
+		if($pageid == ''){
+			$this->parentpage = $post->ID;
+		}else{
+			$this->parentpage = $pageid;
+		}
+		$this->pageID =  get_the_ID();
+		$this->postcount = '';
+		$this->exclude_featured = '';
+		$this->sortorder = 'menu_order';//'menu_order';
+	}
+	
+	function postcount($postcount = 0){
+		$this->postcount = $postcount;
+	}
+	
+	function sort_order($sortorder = 'title'){
+		$this->sortorder = $sortorder;
+	}
+	
+	function remove_featured_image($answer = 'false'){
+		if($answer ==  'false'){
+			$this->exclude_featured = '';
+		}else{
+			$this->exclude_featured = get_post_thumbnail_id();
+		}
+	}
+	
+	function run_get_image(){
+		$id = intval( $this->parentpage );
+		$this->paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+		$attachments = get_children( array(
+				'post_parent' => $id,
+				'post_status' => 'inherit',
+				'post_type' => 'attachment',
+				'post_mime_type' => 'image',
+				'order' => 'DESC',
+				'orderby' => $this->sortorder,
+				'showposts' => $this->postcount ,
+				'exclude'     => $this->exclude_featured,
+				'paged' => $this->paged
+			) );
+			
+		if ( empty( $attachments ) )
+					return '';
+					
+		$this->attachments = $attachments;
+		
+		$this->cntrl = 0;
+		
+		foreach ( $attachments as $id  => $attachment ) :
+			$this->cntrl++;
+			$this->imagesids[$this->cntrl] = $id;
+			$this->attachmenttitle[$this->cntrl] = esc_html( $attachment->post_title, 1 );
+			$this->attachmentcaption[$this->cntrl] = esc_html( $attachment->post_excerpt, 1 );
+		
+		endforeach;
+		
+		$attachments = get_children( array( 'post_parent' => $this->parentpage ) );
+		$count = count( $attachments );
+		if($this->postcount != ''){
+			$this->maxnumpages = $count / $this->postcount;
+			if(strpos($this->maxnumpages,".") != false){
+				$this->maxnumpages ++;
+			}
+			$this->maxnumpages = floor($this->maxnumpages);
+		}
+	}
+	
+	function image_ID(){
+		return $this->imagesids[$this->theimagecount];
+	}
+	
+	function image_loop(){
+		global $image_loop;
+		$image_loop++;
+		$this->theimagecount = $image_loop;
+		return $image_loop <= $this->cntrl;
+	}
+	
+	function get_title(){
+		
+		$thetitle = $this->attachmenttitle[$this->theimagecount];
+		return esc_attr($thetitle);
+	}
+	
+	function get_caption(){
+		$thecaption = $this->attachmentcaption[$this->theimagecount];
+		return esc_attr($thecaption);
+	}
+	
+	function get_src($size = 'FULL'){
+		$id = $this->imagesids[$this->theimagecount];
+		$img = wp_get_attachment_image_src( $id, $size );
+		return esc_url( $img[0] );
+	}
+	function get_width($size = 'FULL'){
+		$id = $this->imagesids[$this->theimagecount];
+		$img = wp_get_attachment_image_src( $id, $size );
+		return esc_url( $img[1] );
+	}
+	function get_height($size = 'FULL'){
+		$id = $this->imagesids[$this->theimagecount];
+		$img = wp_get_attachment_image_src( $id, $size );
+		return esc_url( $img[2] );
+	}
+	
+	function get_image($imgSize = 'FULL'){
+		$imageID = $this->imagesids[$this->theimagecount];
+		$url = wp_get_attachment_image_src($imageID, $imgSize);
+		$banner_url = $url[0];
+		$attachment = get_post( $imageID );
+		$alt = strip_tags(get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true ));
+		$caption = strip_tags($attachment->post_excerpt);
+		$description = strip_tags($attachment->post_content);
+		$title = strip_tags($attachment->post_title);
+		
+		if ($banner_url != "") {
+			$thumb ='<img class="'.$title.'" id="'.$caption.'"  title="'.$description.'" alt="'.$alt.'" src="'.$banner_url.'"  />';// for the size of featured image
+		} else {
+			$thumb = '';
+		}
+		return $thumb;
+	}
+	
+	function get_url(){
+		$id = $this->imagesids[$this->theimagecount];
+		return  esc_url( wp_get_attachment_url( $id ) );
+	}
+	
+	function image_permalink(){
+		$id = $this->imagesids[$this->theimagecount];
+		return  get_permalink(  $id  );
+	}
+	
+	function get_edit(){
+		return 
+		edit_post_link("*EDIT_".$this->get_title($this->thepostcount)."*","","",$this->cydpostcontent['postid'][$this->thepostcount]);
+	}
+	
+	function get_pager($separator = ''){
+		$cydpageID = $this->pageID;
+		$paged = $this->paged;		
+		$pseparator = '';
+		if($this->maxnumpages > 1){
+			for($i=1;$i<=$this->maxnumpages;$i++){
+				if($paged==$i) {
+					$pagerlink .= $pseparator.'<a class="chosenpage">'.$i.'</a>';
+				} else {
+					$pagerlink .= $pseparator.'<a class="pages" href="'.get_permalink($cydpageID).'page/'.$i.'" >'.$i.'</a> ';
+				}
+				$pseparator = $separator;
+			}
+			return $pagerlink;
+		}else{
+			return '1';
+		}	
+	}
+	
+	function get_pager_next($button = 'Next'){
+		$cydpageID = $this->pageID;
+		$paged = $this->paged;
+		$i = $this->maxnumpages;
+		if($paged < $i){
+			$pagednext = $paged+1;
+			return '<a class="pagesnext"  href="'.get_permalink($cydpageID).'page/'.$pagednext.'">'.$button.'</a>';
+		}
+	}
+	
+	function get_pager_prev($button = 'Previous'){
+		$cydpageID = $this->pageID;
+		$paged = $this->paged;
+		$i = $this->maxnumpages;
+		if($paged != 1){
+			$prevpaged = $paged - 1;
+			return '<a class="pagesprev" href="'.get_permalink($cydpageID).'page/'.$prevpaged.'">'.$button.'</a>';
+		}
+	}
+
+}
